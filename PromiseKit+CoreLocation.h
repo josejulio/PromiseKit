@@ -17,6 +17,7 @@
  must write your own promise. Please submit your work back to PromiseKit.
 */
 + (PMKPromise *)promise;
++ (PMKPromise *)promiseIf:(NSArray*(^)(CLLocationManager* location, NSArray* locations)) condition;
 
 @end
 

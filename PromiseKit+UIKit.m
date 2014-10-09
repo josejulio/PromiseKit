@@ -8,7 +8,6 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 
 
-
 static const char* kSegueFulfiller = "kSegueFulfiller";
 static const char* kSegueRejecter = "kSegueRejecter";
 
@@ -101,7 +100,7 @@ static const char* kSegueRejecter = "kSegueRejecter";
 - (PMKPromise *)promiseSegueWithIdentifier:(NSString*) identifier sender:(id) sender {
     
     const char* prefix = "PromiseKitUIKitSegue_";
-    swizzleClass(prefix, self, @selector(prepareForSegue:sender:), @selector(PromiseKitUIKit_prepareForSegue:sender:));
+    classOverridingSelector(prefix, self, @selector(prepareForSegue:sender:), @selector(PromiseKitUIKit_prepareForSegue:sender:));
     PMKPromise* promise = [PMKPromise new:^(id fulfiller, id rejecter){
         objc_setAssociatedObject(self,
                                  kSegueFulfiller,
@@ -119,7 +118,6 @@ static const char* kSegueRejecter = "kSegueRejecter";
     return promise;
 }
 
-
 -(void) PromiseKitUIKit_prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     
     id fulfiller = objc_getAssociatedObject(segue.sourceViewController, kSegueFulfiller);
@@ -132,7 +130,14 @@ static const char* kSegueRejecter = "kSegueRejecter";
     objc_setAssociatedObject(segue.destinationViewController, @selector(reject:), rejecter, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     
-    [self PromiseKitUIKit_prepareForSegue:segue sender:sender];
+    Class zuper = class_getSuperclass([self class]);
+    SEL prepareForSegueSelector = @selector(prepareForSegue:sender:);
+    if ([zuper instancesRespondToSelector:prepareForSegueSelector]) {
+        struct objc_super objcSuper;
+        objcSuper.receiver = self;
+        objcSuper.super_class = zuper;
+        objc_msgSendSuper(&objcSuper, prepareForSegueSelector, segue, sender);
+    }
 }
 
 - (void)fulfill:(id)result {
